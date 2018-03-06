@@ -12,7 +12,7 @@ class L2Norm(nn.Module):
         self.weight = nn.Parameter(torch.Tensor(self.n_channels))
         self.weight.data *= 0.0
         self.weight.data += self.scale
-
+ 
     def forward(self, x):
         norm = x.pow(2).sum(dim=1, keepdim=True).sqrt()+self.eps
         x = x / norm * self.weight.view(1,-1,1,1)
@@ -65,37 +65,39 @@ class s3fd(nn.Module):
         self.conv6_2_mbox_loc  = nn.Conv2d(512, 4, kernel_size=3, stride=1, padding=1)
         self.conv7_2_mbox_conf = nn.Conv2d(256, 2, kernel_size=3, stride=1, padding=1)
         self.conv7_2_mbox_loc  = nn.Conv2d(256, 4, kernel_size=3, stride=1, padding=1)
-
+        # Non-linearities
+        self.relu = nn.ReLU()
+        
     def forward(self, x):
-        h = F.relu(self.conv1_1(x))
-        h = F.relu(self.conv1_2(h))
+        h = self.relu(self.conv1_1(x))
+        h = self.relu(self.conv1_2(h))
         h = F.max_pool2d(h, 2, 2)
 
-        h = F.relu(self.conv2_1(h))
-        h = F.relu(self.conv2_2(h))
+        h = self.relu(self.conv2_1(h))
+        h = self.relu(self.conv2_2(h))
         h = F.max_pool2d(h, 2, 2)
 
-        h = F.relu(self.conv3_1(h))
-        h = F.relu(self.conv3_2(h))
-        h = F.relu(self.conv3_3(h)); f3_3 = h
+        h = self.relu(self.conv3_1(h))
+        h = self.relu(self.conv3_2(h))
+        h = self.relu(self.conv3_3(h)); f3_3 = h
         h = F.max_pool2d(h, 2, 2)
 
-        h = F.relu(self.conv4_1(h))
-        h = F.relu(self.conv4_2(h))
-        h = F.relu(self.conv4_3(h)); f4_3 = h
+        h = self.relu(self.conv4_1(h))
+        h = self.relu(self.conv4_2(h))
+        h = self.relu(self.conv4_3(h)); f4_3 = h
         h = F.max_pool2d(h, 2, 2)
 
-        h = F.relu(self.conv5_1(h))
-        h = F.relu(self.conv5_2(h))
-        h = F.relu(self.conv5_3(h)); f5_3 = h
+        h = self.relu(self.conv5_1(h))
+        h = self.relu(self.conv5_2(h))
+        h = self.relu(self.conv5_3(h)); f5_3 = h
         h = F.max_pool2d(h, 2, 2)
 
-        h = F.relu(self.fc6(h))
-        h = F.relu(self.fc7(h));     ffc7 = h
-        h = F.relu(self.conv6_1(h))
-        h = F.relu(self.conv6_2(h)); f6_2 = h
-        h = F.relu(self.conv7_1(h))
-        h = F.relu(self.conv7_2(h)); f7_2 = h
+        h = self.relu(self.fc6(h))
+        h = self.relu(self.fc7(h));     ffc7 = h
+        h = self.relu(self.conv6_1(h))
+        h = self.relu(self.conv6_2(h)); f6_2 = h
+        h = self.relu(self.conv7_1(h))
+        h = self.relu(self.conv7_2(h)); f7_2 = h
 
         f3_3 = self.conv3_3_norm(f3_3)
         f4_3 = self.conv4_3_norm(f4_3)
