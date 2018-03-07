@@ -1,5 +1,5 @@
 from __future__ import print_function
-
+import time
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -46,18 +46,20 @@ parser.add_argument('--net','-n', default='s3fd', type=str)
 parser.add_argument('--model', default='', type=str)
 parser.add_argument('--path', default='CAMERA', type=str)
 parser.add_argument('--onnx', default='', type=str)
+parser.add_argument("--half", action='store_true',
+                                 help="if set, use fp16 (on gpu)")
 
 args = parser.parse_args()
 use_cuda = torch.cuda.is_available()
 
 
-net = getattr(net_s3fd,args.net)()
+net = getattr(net_s3fd,args.net)(fp16 = args.half)
 if args.model!='' :net.load_state_dict(torch.load(args.model))
 else: print('Please set --model parameter!')
 net.cuda()
 net.eval()
 
-
+frame=0
 # if args.path=='CAMERA': cap = cv2.VideoCapture(0)
 while(True):
 #     if args.path=='CAMERA': ret, img = cap.read()
@@ -70,8 +72,9 @@ while(True):
     img = img.reshape((1,)+img.shape)
     img = Variable(torch.from_numpy(img).float(), requires_grad=False).cuda()
     
-    img = img.half()
-    net = net.cuda().half()
+    if args.half:
+        img = img.half()
+        net = net.cuda().half()
     
     if args.onnx!='':
         torch.onnx.export(net, img, args.onnx)
@@ -79,7 +82,10 @@ while(True):
 
     import cv2
     from bbox import *
+    t0 = time.time()
     bboxlist = detect(net,img)
+    print('Frame: %d, faces: %d time : %s'%(frame, bboxlist.size, time.time()-t0))
+    ++frame 
     img = img.float()
     keep = nms(bboxlist,0.3)
     bboxlist = bboxlist[keep,:]
